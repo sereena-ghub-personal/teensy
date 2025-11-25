@@ -14,7 +14,7 @@ char keyCommand;
 
 // Encoder raw measurements
 unsigned long highRight = 0, highLeft = 0;
-unsigned long lowRight  = 0, lowRight  = 0;
+unsigned long lowRight  = 0, lowLeft  = 0;
 unsigned long cycleTimeRight = 0, cycleTimeLeft = 0;
 double dutyCycleRight = 0.0, dutyCycleLeft = 0.0;
 
