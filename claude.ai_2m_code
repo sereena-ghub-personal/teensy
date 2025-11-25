@@ -1,0 +1,350 @@
+#include <Servo.h>
+#include <math.h>    // for fabs()
+
+Servo servoRight;
+Servo servoLeft;
+
+// Motor connections (check with your wiring!)
+constexpr int pinFeedbackLeft  = 7;
+constexpr int pinFeedbackRight = 8;
+constexpr int pinControlLeft   = 5;
+constexpr int pinControlRight  = 6;
+
+char keyCommand;
+
+// Encoder raw measurements
+unsigned long highRight = 0, highLeft = 0;
+unsigned long lowRight  = 0, lowRight  = 0;
+unsigned long cycleTimeRight = 0, cycleTimeLeft = 0;
+double dutyCycleRight = 0.0, dutyCycleLeft = 0.0;
+
+// Current + previous angles (0–360°)
+double thetaRight  = 0.0, thetaLeft  = 0.0;
+double thetaRightP = 0.0, thetaLeftP = 0.0;
+
+// Accumulated rotation in degrees (for distance)
+double totalDegRight = 0.0;
+double totalDegLeft  = 0.0;
+
+// Target wheel rotation for about 2 meters
+const double DEGREE_TARGET_2M = 3478.0;   // ≈ 9.66 turns * 360°
+
+// *** CALIBRATION SECTION ***
+// Forward speeds (your existing values)
+const int SPEED_FORWARD_RIGHT = 89;
+const int SPEED_FORWARD_LEFT  = 98;
+
+// Backward speeds - ADJUST THESE VALUES during calibration
+// Start with these and fine-tune based on actual distance traveled
+const int SPEED_BACKWARD_RIGHT = 99;  // Try 98, 99, 100, 101
+const int SPEED_BACKWARD_LEFT  = 90;  // Try 88, 89, 90, 91
+
+// Neutral/stop value
+const int SPEED_STOP = 94;
+
+/********** FUNCTION DECLARATIONS **********/
+void calculateThetaRight();
+void calculateThetaLeft();
+void stopRobot();
+void updateEncodersAndAccumulate();
+void moveForward2m();
+void moveBackward2m();
+void calibrateBackwardSpeed();
+
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(pinFeedbackRight, INPUT);
+  pinMode(pinFeedbackLeft,  INPUT);
+  
+  Serial.println("Robot Ready!");
+  Serial.println("Commands:");
+  Serial.println("  'f' - Move forward 2m then backward 2m");
+  Serial.println("  'c' - Calibrate backward speed");
+  Serial.println("  's' - Emergency stop");
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    keyCommand = Serial.read();
+    
+    switch (keyCommand) {
+
+      case 'f':
+        Serial.println("Starting forward-backward cycle...");
+        moveForward2m();
+        delay(500);  // brief pause between movements
+        moveBackward2m();
+        Serial.println("Cycle complete!");
+        break;
+
+      case 'c':
+        Serial.println("Starting backward calibration...");
+        calibrateBackwardSpeed();
+        break;
+
+      case 's':
+        Serial.println("Emergency stop!");
+        stopRobot();
+        break;
+
+      default:
+        break;
+    }
+  }
+}
+
+
+/***************** BASIC STOP *****************/
+
+void stopRobot() {
+  servoRight.attach(pinControlRight);
+  servoLeft.attach(pinControlLeft);
+
+  servoRight.write(SPEED_STOP);
+  servoLeft.write(SPEED_STOP);
+
+  delay(100);    // let servos receive stop PWM
+
+  servoRight.detach();
+  servoLeft.detach();
+}
+
+
+/********* ENCODER UPDATE + ACCUMULATION *********/
+
+void updateEncodersAndAccumulate() {
+  // store previous angles
+  thetaRightP = thetaRight;
+  thetaLeftP  = thetaLeft;
+
+  // read new angles from encoders
+  calculateThetaRight();
+  calculateThetaLeft();
+
+  // compute angle change
+  double dR = thetaRight - thetaRightP;
+  double dL = thetaLeft  - thetaLeftP;
+
+  // handle wrap-around at 0/360 so we get the shortest step
+  if (dR > 180.0)  dR -= 360.0;
+  if (dR < -180.0) dR += 360.0;
+
+  if (dL > 180.0)  dL -= 360.0;
+  if (dL < -180.0) dL += 360.0;
+
+  // accumulate absolute rotation
+  totalDegRight += fabs(dR);
+  totalDegLeft  += fabs(dL);
+}
+
+
+/***************** 2 METER FORWARD *****************/
+
+void moveForward2m() {
+  totalDegRight = 0.0;
+  totalDegLeft  = 0.0;
+
+  // init previous angles so first diff is small
+  calculateThetaRight();
+  calculateThetaLeft();
+  thetaRightP = thetaRight;
+  thetaLeftP  = thetaLeft;
+
+  servoRight.attach(pinControlRight);
+  servoLeft.attach(pinControlLeft);
+
+  unsigned long startTime = millis();
+
+  while (totalDegRight < DEGREE_TARGET_2M &&
+         totalDegLeft  < DEGREE_TARGET_2M) {
+
+    // --- SAFETY 1: time-out in case encoders fail ---
+    if (millis() - startTime > 8000) {   // 8 seconds timeout
+      Serial.println("Timeout in moveForward2m, stopping.");
+      break;
+    }
+
+    // --- SAFETY 2: allow 's' to stop immediately ---
+    if (Serial.available() > 0) {
+      char c = Serial.read();
+      if (c == 's') {
+        Serial.println("Stop command (s) received in moveForward2m.");
+        stopRobot();
+        return;
+      }
+    }
+
+    // forward motion (calibrated values)
+    servoRight.write(SPEED_FORWARD_RIGHT);
+    servoLeft.write(SPEED_FORWARD_LEFT);
+
+    // update encoder-based rotation
+    updateEncodersAndAccumulate();
+
+    // debug print every 500ms to avoid spam
+    static unsigned long lastPrint = 0;
+    if (millis() - lastPrint > 500) {
+      Serial.print("Fwd | R: ");
+      Serial.print(totalDegRight, 0);
+      Serial.print("° L: ");
+      Serial.print(totalDegLeft, 0);
+      Serial.println("°");
+      lastPrint = millis();
+    }
+  }
+
+  Serial.print("Forward complete - R: ");
+  Serial.print(totalDegRight, 0);
+  Serial.print("° L: ");
+  Serial.print(totalDegLeft, 0);
+  Serial.println("°");
+  
+  stopRobot();
+}
+
+
+/***************** 2 METER BACKWARD *****************/
+
+void moveBackward2m() {
+  totalDegRight = 0.0;
+  totalDegLeft  = 0.0;
+
+  // init previous angles
+  calculateThetaRight();
+  calculateThetaLeft();
+  thetaRightP = thetaRight;
+  thetaLeftP  = thetaLeft;
+
+  servoRight.attach(pinControlRight);
+  servoLeft.attach(pinControlLeft);
+
+  unsigned long startTime = millis();
+
+  while (totalDegRight < DEGREE_TARGET_2M &&
+         totalDegLeft  < DEGREE_TARGET_2M) {
+
+    // --- SAFETY 1: time-out ---
+    if (millis() - startTime > 8000) {
+      Serial.println("Timeout in moveBackward2m, stopping.");
+      break;
+    }
+
+    // --- SAFETY 2: allow 's' to stop immediately ---
+    if (Serial.available() > 0) {
+      char c = Serial.read();
+      if (c == 's') {
+        Serial.println("Stop command (s) received in moveBackward2m.");
+        stopRobot();
+        return;
+      }
+    }
+
+    // backward motion (CALIBRATED values - adjust constants at top if needed)
+    servoRight.write(SPEED_BACKWARD_RIGHT);
+    servoLeft.write(SPEED_BACKWARD_LEFT);
+
+    updateEncodersAndAccumulate();
+
+    // debug print every 500ms
+    static unsigned long lastPrint = 0;
+    if (millis() - lastPrint > 500) {
+      Serial.print("Back | R: ");
+      Serial.print(totalDegRight, 0);
+      Serial.print("° L: ");
+      Serial.print(totalDegLeft, 0);
+      Serial.println("°");
+      lastPrint = millis();
+    }
+  }
+
+  Serial.print("Backward complete - R: ");
+  Serial.print(totalDegRight, 0);
+  Serial.print("° L: ");
+  Serial.print(totalDegLeft, 0);
+  Serial.println("°");
+  
+  stopRobot();
+}
+
+
+/***************** CALIBRATION HELPER *****************/
+
+void calibrateBackwardSpeed() {
+  Serial.println("\n=== BACKWARD SPEED CALIBRATION ===");
+  Serial.println("Testing backward movement for 2 seconds...");
+  Serial.println("Current values:");
+  Serial.print("  Right: "); Serial.println(SPEED_BACKWARD_RIGHT);
+  Serial.print("  Left: "); Serial.println(SPEED_BACKWARD_LEFT);
+  Serial.println("\nMeasuring rotation...");
+  
+  totalDegRight = 0.0;
+  totalDegLeft  = 0.0;
+  
+  calculateThetaRight();
+  calculateThetaLeft();
+  thetaRightP = thetaRight;
+  thetaLeftP  = thetaLeft;
+  
+  servoRight.attach(pinControlRight);
+  servoLeft.attach(pinControlLeft);
+  
+  unsigned long startTime = millis();
+  
+  while (millis() - startTime < 2000) {  // Run for 2 seconds
+    servoRight.write(SPEED_BACKWARD_RIGHT);
+    servoLeft.write(SPEED_BACKWARD_LEFT);
+    updateEncodersAndAccumulate();
+  }
+  
+  stopRobot();
+  
+  Serial.println("\nCalibration Results:");
+  Serial.print("  Right wheel: "); 
+  Serial.print(totalDegRight, 0);
+  Serial.println("°");
+  Serial.print("  Left wheel: ");
+  Serial.print(totalDegLeft, 0);
+  Serial.println("°");
+  
+  Serial.println("\nAdjustment Guide:");
+  Serial.println("- If wheels are too SLOW: increase speed values");
+  Serial.println("- If wheels are too FAST: decrease speed values");
+  Serial.println("- Update SPEED_BACKWARD_RIGHT and SPEED_BACKWARD_LEFT");
+  Serial.println("  at the top of the code, then re-upload.\n");
+}
+
+
+/***************** ENCODER FUNCTIONS *****************/
+
+void calculateThetaRight() {
+  highRight = pulseIn(pinFeedbackRight, HIGH);
+  lowRight  = pulseIn(pinFeedbackRight, LOW);
+  cycleTimeRight = highRight + lowRight;
+
+  if (cycleTimeRight == 0) {
+    // no valid pulse → keep previous thetaRight
+    return;
+  }
+
+  dutyCycleRight = (double)(highRight * 100.0) / (double)cycleTimeRight;
+
+  thetaRight = (360.0 - 1.0)
+               - ((dutyCycleRight - 2.9) * 360.0) / (97.1 - 2.9 + 1.0);
+}
+
+void calculateThetaLeft() {
+  highLeft = pulseIn(pinFeedbackLeft, HIGH);
+  lowLeft  = pulseIn(pinFeedbackLeft, LOW);
+  cycleTimeLeft = highLeft + lowLeft;
+
+  if (cycleTimeLeft == 0) {
+    // no valid pulse → keep previous thetaLeft
+    return;
+  }
+
+  dutyCycleLeft = (double)(highLeft * 100.0) / (double)cycleTimeLeft;
+
+  thetaLeft = (360.0 - 1.0)
+              - ((dutyCycleLeft - 2.9) * 360.0) / (97.1 - 2.9 + 1.0);
+}
