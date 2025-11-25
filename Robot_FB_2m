@@ -16,10 +16,10 @@ const byte pinFeedbackLeft  = 7;
    (Tune these values if robot drifts)
 --------------------------------------------------------- */
 const int STOP_PULSE = 94;
-const int FWD_RIGHT  = 89;
-const int FWD_LEFT   = 98;
-const int BWD_RIGHT  = 98;
-const int BWD_LEFT   = 89;
+const int FWD_RIGHT = 92;
+const int FWD_LEFT  = 96;
+const int BWD_RIGHT = 96;
+const int BWD_LEFT  = 92;
 
 /* ---------------------------------------------------------
    ROBOT PARAMETERS
@@ -74,6 +74,12 @@ float readTheta(byte pin) {
 void updateRotation() {
   thetaRight = readTheta(pinFeedbackRight);
   thetaLeft  = readTheta(pinFeedbackLeft);
+
+  if (thetaRight == 0) {
+  Serial.println("RIGHT ENCODER LOST – STOPPING");
+  totalRotRight = targetRotations + 1;  // force loop exit
+  return;
+  }
 
   float dR = thetaRight - prevThetaRight;
   float dL = thetaLeft - prevThetaLeft;
