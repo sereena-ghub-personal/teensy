@@ -97,6 +97,10 @@ void updateRotation() {
     Serial.print(" L: ");
     Serial.println(totalRotLeft, 3);
   }
+
+   if (thetaRight == 0) {
+     Serial.println("WARNING: Right encoder signal LOST");
+   }
 }
 
 /* ---------------------------------------------------------
