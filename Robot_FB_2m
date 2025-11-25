@@ -1,15 +1,19 @@
 #include <Servo.h>
 
+/* ---------------------------------------------------------
+   SERVO OBJECTS & PIN ASSIGNMENTS
+--------------------------------------------------------- */
 Servo servoRight;
 Servo servoLeft;
 
-const byte pinServoRight   = 6;
-const byte pinServoLeft    = 5;
+const byte pinServoRight    = 6;
+const byte pinServoLeft     = 5;
 const byte pinFeedbackRight = 8;
 const byte pinFeedbackLeft  = 7;
 
 /* ---------------------------------------------------------
-   SERVO CALIBRATION (adjust if drifting)
+   SERVO CALIBRATION
+   (Tune these values if robot drifts)
 --------------------------------------------------------- */
 const int STOP_PULSE = 94;
 const int FWD_RIGHT  = 89;
@@ -20,10 +24,10 @@ const int BWD_LEFT   = 89;
 /* ---------------------------------------------------------
    ROBOT PARAMETERS
 --------------------------------------------------------- */
-const float wheelDiameter = 0.03;      // meters
-const float wheelCirc     = 3.14159 * wheelDiameter;   // 0.0942 m
-const float targetDist    = 2.0;       // 2 meters forward
-const float targetRotations = targetDist / wheelCirc;  // 21.23 rotations
+const float wheelDiameter = 0.03;                 // meters
+const float wheelCirc = 3.14159 * wheelDiameter;  // ≈ 0.0942 m
+const float targetDist = 2.0;                     // forward/backward distance
+const float targetRotations = targetDist / wheelCirc;
 
 /* ---------------------------------------------------------
    ENCODER VARIABLES
@@ -38,30 +42,34 @@ float totalRotRight = 0, totalRotLeft = 0;
 /* ---------------------------------------------------------
    CONTROL GAINS
 --------------------------------------------------------- */
-float Kp = 3.0;   // proportional gain, adjust if needed
+float Kp = 3.0;         // proportional gain
 int P_right = 0, P_left = 0;
 
 /* ---------------------------------------------------------
-   READ PARALLAX 360 ENCODER SIGNAL
+   DEBUG OPTION
+--------------------------------------------------------- */
+bool DEBUG = false;
+
+/* ---------------------------------------------------------
+   READ PARALLAX 360° ENCODER ANGLE
 --------------------------------------------------------- */
 float readTheta(byte pin) {
-  unsigned long highTime = pulseIn(pin, HIGH);
-  unsigned long lowTime  = pulseIn(pin, LOW);
-  unsigned long T = highTime + lowTime;
-  if (T == 0) return 0;
+  unsigned long highTime = pulseIn(pin, HIGH, 20000);  // 20ms timeout
+  unsigned long lowTime  = pulseIn(pin, LOW, 20000);
 
-  float duty = (highTime * 100.0) / T;  // percent
+  if (highTime == 0 || lowTime == 0) return 0;  // no signal
 
-  // Convert duty cycle to degrees (from Parallax datasheet)
-  float theta = (duty - 2.9) * (360.0 / (97.1 - 2.9));
-  if (theta < 0) theta = 0;
-  if (theta > 360) theta = 360;
+  float duty = (highTime * 100.0) / (highTime + lowTime);
 
-  return theta;
+  float angle = (duty - 2.9) * (360.0 / (97.1 - 2.9));
+  if (angle < 0) angle = 0;
+  if (angle > 360) angle = 360;
+
+  return angle;
 }
 
 /* ---------------------------------------------------------
-   UPDATE ROTATION COUNTS USING WRAP-AROUND LOGIC
+   UPDATE ROTATION COUNT
 --------------------------------------------------------- */
 void updateRotation() {
   thetaRight = readTheta(pinFeedbackRight);
@@ -70,6 +78,7 @@ void updateRotation() {
   float dR = thetaRight - prevThetaRight;
   float dL = thetaLeft - prevThetaLeft;
 
+  // Wrap detection
   if (dR > 180)  { turnsRight--; dR -= 360; }
   if (dR < -180) { turnsRight++; dR += 360; }
 
@@ -80,14 +89,26 @@ void updateRotation() {
   totalRotLeft  = turnsLeft  + thetaLeft  / 360.0;
 
   prevThetaRight = thetaRight;
-  prevThetaLeft = thetaLeft;
+  prevThetaLeft  = thetaLeft;
+
+  if (DEBUG) {
+    Serial.print("R: ");
+    Serial.print(totalRotRight, 3);
+    Serial.print(" L: ");
+    Serial.println(totalRotLeft, 3);
+  }
 }
 
 /* ---------------------------------------------------------
-   PROPORTIONAL CONTROLLER
+   PROPORTIONAL CONTROL (SIGNED FORWARD/BACKWARD)
 --------------------------------------------------------- */
-void updatePcontrol() {
-  float error = totalRotLeft - totalRotRight;
+void updatePcontrol(bool forward) {
+  float error;
+
+  if (forward) 
+      error = totalRotLeft - totalRotRight;
+  else  
+      error = totalRotRight - totalRotLeft;  // reverse sign for backward
 
   int correction = Kp * error;
 
@@ -96,17 +117,19 @@ void updatePcontrol() {
 }
 
 /* ---------------------------------------------------------
-   DRIVE WITH CLOSED LOOP CONTROL
+   DRIVE FORWARD USING FEEDBACK CONTROL
 --------------------------------------------------------- */
 void driveForwardControlled() {
   servoRight.attach(pinServoRight);
   servoLeft.attach(pinServoLeft);
 
-  while ( (totalRotRight < targetRotations) &&
-          (totalRotLeft  < targetRotations) ) 
+  Serial.println("Driving FORWARD...");
+
+  while (totalRotRight < targetRotations &&
+         totalRotLeft  < targetRotations) 
   {
     updateRotation();
-    updatePcontrol();
+    updatePcontrol(true);
 
     servoRight.write(FWD_RIGHT + P_right);
     servoLeft.write(FWD_LEFT + P_left);
@@ -114,33 +137,46 @@ void driveForwardControlled() {
 
   servoRight.detach();
   servoLeft.detach();
+
+  Serial.println("FORWARD complete");
 }
 
 /* ---------------------------------------------------------
-   DRIVE BACKWARD
+   DRIVE BACKWARD USING FEEDBACK CONTROL
 --------------------------------------------------------- */
 void driveBackwardControlled() {
   servoRight.attach(pinServoRight);
   servoLeft.attach(pinServoLeft);
 
-  while ( (totalRotRight < targetRotations) &&
-          (totalRotLeft  < targetRotations) )
+  Serial.println("Driving BACKWARD...");
+
+  while (totalRotRight < targetRotations &&
+         totalRotLeft  < targetRotations) 
   {
     updateRotation();
-    updatePcontrol();
+    updatePcontrol(false);
 
-    // reverse direction
     servoRight.write(BWD_RIGHT + P_right);
     servoLeft.write(BWD_LEFT + P_left);
   }
 
   servoRight.detach();
   servoLeft.detach();
+
+  Serial.println("BACKWARD complete");
 }
 
+/* ---------------------------------------------------------
+   RESET ENCODER STATE
+--------------------------------------------------------- */
+void resetEncoders() {
+  turnsRight = turnsLeft = 0;
+  totalRotRight = totalRotLeft = 0;
+  prevThetaRight = prevThetaLeft = 0;
+}
 
 /* ---------------------------------------------------------
-   SETUP + MAIN LOGIC
+   SETUP
 --------------------------------------------------------- */
 void setup() {
   Serial.begin(9600);
@@ -149,39 +185,32 @@ void setup() {
   pinMode(pinFeedbackLeft, INPUT);
 
   delay(2000);
-  Serial.println("Starting precise straight-line test...");
+  Serial.println("Robot ready. Send 'f' to start full sequence.");
 }
 
+/* ---------------------------------------------------------
+   LOOP
+--------------------------------------------------------- */
 void loop() {
   if (Serial.available() > 0) {
     char cmd = Serial.read();
 
+    if (cmd == 'd') { DEBUG = !DEBUG; }
+
     if (cmd == 'f') {
-      Serial.println("Command received: FORWARD sequence");
+      Serial.println("Command received: f");
 
-      // Reset encoder tracking before moving
-      turnsRight = turnsLeft = 0;
-      totalRotRight = totalRotLeft = 0;
-      prevThetaRight = prevThetaLeft = 0;
-
-      // Run the precise 2 m forward motion
-      Serial.println("Moving FORWARD 2 meters...");
+      // Forward motion
+      resetEncoders();
       driveForwardControlled();
-      Serial.println("Forward complete.");
 
       delay(700);
 
-      // Reset counters before backward
-      turnsRight = turnsLeft = 0;
-      totalRotRight = totalRotLeft = 0;
-
-      // Run the precise 2 m backward motion
-      Serial.println("Moving BACKWARD 2 meters...");
+      // Backward motion
+      resetEncoders();
       driveBackwardControlled();
-      Serial.println("Backward complete.");
 
-      Serial.println("Sequence finished. Waiting for next 'f'...");
+      Serial.println("Sequence finished.");
     }
   }
 }
-
