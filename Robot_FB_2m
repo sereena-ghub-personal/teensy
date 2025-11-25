@@ -120,6 +120,8 @@ void updatePcontrol(bool forward) {
    DRIVE FORWARD USING FEEDBACK CONTROL
 --------------------------------------------------------- */
 void driveForwardControlled() {
+  Serial.println("ENTERED BACKWARD FUNCTION");
+
   servoRight.attach(pinServoRight);
   servoLeft.attach(pinServoLeft);
 
@@ -172,8 +174,12 @@ void driveBackwardControlled() {
 void resetEncoders() {
   turnsRight = turnsLeft = 0;
   totalRotRight = totalRotLeft = 0;
-  prevThetaRight = prevThetaLeft = 0;
+
+  // Read actual starting angle (prevents false huge rotation jumps)
+  prevThetaRight = readTheta(pinFeedbackRight);
+  prevThetaLeft  = readTheta(pinFeedbackLeft);
 }
+
 
 /* ---------------------------------------------------------
    SETUP
