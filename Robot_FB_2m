@@ -153,23 +153,35 @@ void setup() {
 }
 
 void loop() {
+  if (Serial.available() > 0) {
+    char cmd = Serial.read();
 
-  // Reset rotation tracking
-  turnsRight = turnsLeft = 0;
-  totalRotRight = totalRotLeft = 0;
-  prevThetaRight = prevThetaLeft = 0;
+    if (cmd == 'f') {
+      Serial.println("Command received: FORWARD sequence");
 
-  Serial.println("Moving FORWARD 2 meters...");
-  driveForwardControlled();
+      // Reset encoder tracking before moving
+      turnsRight = turnsLeft = 0;
+      totalRotRight = totalRotLeft = 0;
+      prevThetaRight = prevThetaLeft = 0;
 
-  delay(500);
+      // Run the precise 2 m forward motion
+      Serial.println("Moving FORWARD 2 meters...");
+      driveForwardControlled();
+      Serial.println("Forward complete.");
 
-  Serial.println("Moving BACKWARD 2 meters...");
-  turnsRight = turnsLeft = 0;
-  totalRotRight = totalRotLeft = 0;
-  driveBackwardControlled();
+      delay(700);
 
-  Serial.println("Sequence complete. Robot should be within ±5 cm.");
-  
-  while (1); // stop
+      // Reset counters before backward
+      turnsRight = turnsLeft = 0;
+      totalRotRight = totalRotLeft = 0;
+
+      // Run the precise 2 m backward motion
+      Serial.println("Moving BACKWARD 2 meters...");
+      driveBackwardControlled();
+      Serial.println("Backward complete.");
+
+      Serial.println("Sequence finished. Waiting for next 'f'...");
+    }
+  }
 }
+
