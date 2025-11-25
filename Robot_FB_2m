@@ -123,14 +123,13 @@ void driveBackwardControlled() {
   servoRight.attach(pinServoRight);
   servoLeft.attach(pinServoLeft);
 
-  long target = turnsRight - targetRotations;  // moving backwards
-
-  while ( (totalRotRight > -targetRotations) &&
-          (totalRotLeft  > -targetRotations) ) 
+  while ( (totalRotRight < targetRotations) &&
+          (totalRotLeft  < targetRotations) )
   {
     updateRotation();
     updatePcontrol();
 
+    // reverse direction
     servoRight.write(BWD_RIGHT + P_right);
     servoLeft.write(BWD_LEFT + P_left);
   }
@@ -138,6 +137,7 @@ void driveBackwardControlled() {
   servoRight.detach();
   servoLeft.detach();
 }
+
 
 /* ---------------------------------------------------------
    SETUP + MAIN LOGIC
