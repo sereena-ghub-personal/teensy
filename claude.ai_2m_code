@@ -88,6 +88,16 @@ void loop() {
         stopRobot();
         break;
 
+      case 't':  // test left motor
+        Serial.println("Testing LEFT motor only...");
+        servoLeft.attach(pinControlLeft);
+        servoLeft.write(100);  // try different values: 85, 90, 95, 100, 105
+        delay(3000);
+        servoLeft.write(94);
+        servoLeft.detach();
+        Serial.println("Left motor test complete");
+        break;
+
       default:
         break;
     }
