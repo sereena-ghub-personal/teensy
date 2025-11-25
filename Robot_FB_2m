@@ -175,7 +175,7 @@ void resetEncoders() {
   turnsRight = turnsLeft = 0;
   totalRotRight = totalRotLeft = 0;
 
-  // Read actual starting angle (prevents false huge rotation jumps)
+  // IMPORTANT: read actual starting angle
   prevThetaRight = readTheta(pinFeedbackRight);
   prevThetaLeft  = readTheta(pinFeedbackLeft);
 }
@@ -213,6 +213,7 @@ void loop() {
       delay(700);
 
       // Backward motion
+      Serial.println("Calling BACKWARD now!");
       resetEncoders();
       driveBackwardControlled();
 
