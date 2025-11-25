@@ -1,0 +1,175 @@
+#include <Servo.h>
+
+Servo servoRight;
+Servo servoLeft;
+
+const byte pinServoRight   = 6;
+const byte pinServoLeft    = 5;
+const byte pinFeedbackRight = 8;
+const byte pinFeedbackLeft  = 7;
+
+/* ---------------------------------------------------------
+   SERVO CALIBRATION (adjust if drifting)
+--------------------------------------------------------- */
+const int STOP_PULSE = 94;
+const int FWD_RIGHT  = 89;
+const int FWD_LEFT   = 98;
+const int BWD_RIGHT  = 98;
+const int BWD_LEFT   = 89;
+
+/* ---------------------------------------------------------
+   ROBOT PARAMETERS
+--------------------------------------------------------- */
+const float wheelDiameter = 0.03;      // meters
+const float wheelCirc     = 3.14159 * wheelDiameter;   // 0.0942 m
+const float targetDist    = 2.0;       // 2 meters forward
+const float targetRotations = targetDist / wheelCirc;  // 21.23 rotations
+
+/* ---------------------------------------------------------
+   ENCODER VARIABLES
+--------------------------------------------------------- */
+volatile float thetaRight = 0, thetaLeft = 0;
+volatile float prevThetaRight = 0, prevThetaLeft = 0;
+
+volatile long turnsRight = 0, turnsLeft = 0;
+
+float totalRotRight = 0, totalRotLeft = 0;
+
+/* ---------------------------------------------------------
+   CONTROL GAINS
+--------------------------------------------------------- */
+float Kp = 3.0;   // proportional gain, adjust if needed
+int P_right = 0, P_left = 0;
+
+/* ---------------------------------------------------------
+   READ PARALLAX 360 ENCODER SIGNAL
+--------------------------------------------------------- */
+float readTheta(byte pin) {
+  unsigned long highTime = pulseIn(pin, HIGH);
+  unsigned long lowTime  = pulseIn(pin, LOW);
+  unsigned long T = highTime + lowTime;
+  if (T == 0) return 0;
+
+  float duty = (highTime * 100.0) / T;  // percent
+
+  // Convert duty cycle to degrees (from Parallax datasheet)
+  float theta = (duty - 2.9) * (360.0 / (97.1 - 2.9));
+  if (theta < 0) theta = 0;
+  if (theta > 360) theta = 360;
+
+  return theta;
+}
+
+/* ---------------------------------------------------------
+   UPDATE ROTATION COUNTS USING WRAP-AROUND LOGIC
+--------------------------------------------------------- */
+void updateRotation() {
+  thetaRight = readTheta(pinFeedbackRight);
+  thetaLeft  = readTheta(pinFeedbackLeft);
+
+  float dR = thetaRight - prevThetaRight;
+  float dL = thetaLeft - prevThetaLeft;
+
+  if (dR > 180)  { turnsRight--; dR -= 360; }
+  if (dR < -180) { turnsRight++; dR += 360; }
+
+  if (dL > 180)  { turnsLeft--; dL -= 360; }
+  if (dL < -180) { turnsLeft++; dL += 360; }
+
+  totalRotRight = turnsRight + thetaRight / 360.0;
+  totalRotLeft  = turnsLeft  + thetaLeft  / 360.0;
+
+  prevThetaRight = thetaRight;
+  prevThetaLeft = thetaLeft;
+}
+
+/* ---------------------------------------------------------
+   PROPORTIONAL CONTROLLER
+--------------------------------------------------------- */
+void updatePcontrol() {
+  float error = totalRotLeft - totalRotRight;
+
+  int correction = Kp * error;
+
+  P_right = correction;
+  P_left  = -correction;
+}
+
+/* ---------------------------------------------------------
+   DRIVE WITH CLOSED LOOP CONTROL
+--------------------------------------------------------- */
+void driveForwardControlled() {
+  servoRight.attach(pinServoRight);
+  servoLeft.attach(pinServoLeft);
+
+  while ( (totalRotRight < targetRotations) &&
+          (totalRotLeft  < targetRotations) ) 
+  {
+    updateRotation();
+    updatePcontrol();
+
+    servoRight.write(FWD_RIGHT + P_right);
+    servoLeft.write(FWD_LEFT + P_left);
+  }
+
+  servoRight.detach();
+  servoLeft.detach();
+}
+
+/* ---------------------------------------------------------
+   DRIVE BACKWARD
+--------------------------------------------------------- */
+void driveBackwardControlled() {
+  servoRight.attach(pinServoRight);
+  servoLeft.attach(pinServoLeft);
+
+  long target = turnsRight - targetRotations;  // moving backwards
+
+  while ( (totalRotRight > -targetRotations) &&
+          (totalRotLeft  > -targetRotations) ) 
+  {
+    updateRotation();
+    updatePcontrol();
+
+    servoRight.write(BWD_RIGHT + P_right);
+    servoLeft.write(BWD_LEFT + P_left);
+  }
+
+  servoRight.detach();
+  servoLeft.detach();
+}
+
+/* ---------------------------------------------------------
+   SETUP + MAIN LOGIC
+--------------------------------------------------------- */
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(pinFeedbackRight, INPUT);
+  pinMode(pinFeedbackLeft, INPUT);
+
+  delay(2000);
+  Serial.println("Starting precise straight-line test...");
+}
+
+void loop() {
+
+  // Reset rotation tracking
+  turnsRight = turnsLeft = 0;
+  totalRotRight = totalRotLeft = 0;
+  prevThetaRight = prevThetaLeft = 0;
+
+  Serial.println("Moving FORWARD 2 meters...");
+  driveForwardControlled();
+
+  delay(500);
+
+  Serial.println("Moving BACKWARD 2 meters...");
+  turnsRight = turnsLeft = 0;
+  totalRotRight = totalRotLeft = 0;
+  driveBackwardControlled();
+
+  Serial.println("Sequence complete. Robot should be within ±5 cm.");
+  
+  while (1); // stop
+}
