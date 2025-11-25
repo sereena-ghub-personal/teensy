@@ -1,0 +1,126 @@
+#include <Servo.h>
+
+Servo servoRight;
+Servo servoLeft;
+
+const byte pinServoLeft  = 5;
+const byte pinServoRight = 6;
+
+char keyCommand;
+
+// --- Movement pulse values for Parallax 360 ---
+// (These are typical — adjust if your robot drifts)
+int stopPulse     = 94;   // Your robot's stop value
+int forwardLeft   = 98;   // Left wheel forwards
+int forwardRight  = 89;   // Right wheel forwards
+int backwardLeft  = 89;   // Left backwards
+int backwardRight = 98;   // Right backwards
+
+// Movement durations (change if needed)
+int forwardTime   = 500;  // ~10–20 cm
+int backwardTime  = 500;  
+int turnTime      = 350;  // ~45° rotation
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Ready! Send f/b/l/r/s");
+}
+
+void loop() {
+
+  if (Serial.available() > 0) {
+    keyCommand = Serial.read();
+
+    switch (keyCommand) {
+
+      case 'f':   // forward
+        moveForward();
+        break;
+
+      case 'b':   // backward
+        moveBackward();
+        break;
+
+      case 'l':   // turn left
+        turnLeft();
+        break;
+
+      case 'r':   // turn right
+        turnRight();
+        break;
+
+      case 's':   // stop
+        stopRobot();
+        break;
+    }
+  }
+}
+
+// -------------------- MOVEMENT -------------------------
+
+void moveForward() {
+  servoRight.attach(pinServoRight);
+  servoLeft.attach(pinServoLeft);
+
+  servoRight.write(forwardRight);
+  servoLeft.write(forwardLeft);
+
+  delay(forwardTime);
+
+  servoRight.detach();
+  servoLeft.detach();
+}
+
+void moveBackward() {
+  servoRight.attach(pinServoRight);
+  servoLeft.attach(pinServoLeft);
+
+  servoRight.write(backwardRight);
+  servoLeft.write(backwardLeft);
+
+  delay(backwardTime);
+
+  servoRight.detach();
+  servoLeft.detach();
+}
+
+void turnLeft() {
+  servoRight.attach(pinServoRight);
+  servoLeft.attach(pinServoLeft);
+
+  // both > stop → right wheels go slightly forward, left slightly backward
+  servoRight.write(forwardLeft);
+  servoLeft.write(forwardLeft);
+
+  delay(turnTime);
+
+  servoRight.detach();
+  servoLeft.detach();
+}
+
+void turnRight() {
+  servoRight.attach(pinServoRight);
+  servoLeft.attach(pinServoLeft);
+
+  // both < stop → right wheels go reverse, left forward
+  servoRight.write(forwardRight);
+  servoLeft.write(forwardRight);
+
+  delay(turnTime);
+
+  servoRight.detach();
+  servoLeft.detach();
+}
+
+void stopRobot() {
+  servoRight.attach(pinServoRight);
+  servoLeft.attach(pinServoLeft);
+
+  servoRight.write(stopPulse);
+  servoLeft.write(stopPulse);
+
+  delay(100);
+
+  servoRight.detach();
+  servoLeft.detach();
+}
