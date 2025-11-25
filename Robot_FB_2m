@@ -130,8 +130,6 @@ void updatePcontrol(bool forward) {
    DRIVE FORWARD USING FEEDBACK CONTROL
 --------------------------------------------------------- */
 void driveForwardControlled() {
-  Serial.println("ENTERED BACKWARD FUNCTION");
-
   servoRight.attach(pinServoRight);
   servoLeft.attach(pinServoLeft);
 
