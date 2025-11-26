@@ -31,13 +31,13 @@ const double DEGREE_TARGET_2M = 3478.0;   // ≈ 9.66 turns * 360°
 
 // *** CALIBRATION SECTION ***
 // Forward speeds (your existing values)
-const int SPEED_FORWARD_RIGHT = 89;
+const int SPEED_FORWARD_RIGHT = 93;
 const int SPEED_FORWARD_LEFT  = 98;
 
 // Backward speeds - ADJUST THESE VALUES during calibration
 // Start with these and fine-tune based on actual distance traveled
-const int SPEED_BACKWARD_RIGHT = 99;  // Try 98, 99, 100, 101
-const int SPEED_BACKWARD_LEFT  = 90;  // Try 88, 89, 90, 91
+const int SPEED_BACKWARD_RIGHT = 101;  // Try 98, 99, 100, 101
+const int SPEED_BACKWARD_LEFT  = 91;  // Try 88, 89, 90, 91
 
 // Neutral/stop value
 const int SPEED_STOP = 94;
@@ -98,10 +98,8 @@ void loop() {
         Serial.println("Left motor test complete");
         break;
 
-      default:
-        break;
-
-      case 'g':  // test forward straightness
+      case 'g': {
+        // test forward straightness
         Serial.println("Testing FORWARD straightness for 2 seconds...");
         
         totalDegRight = 0.0;
@@ -130,6 +128,10 @@ void loop() {
         Serial.print("  Left: ");  Serial.print(totalDegLeft, 0);  Serial.println("°");
         Serial.print("  Difference: "); Serial.print(abs(totalDegRight - totalDegLeft), 0); Serial.println("°");
         Serial.println("Goal: Difference should be < 50° for straight motion");
+        break;  
+      } 
+
+      default:
         break;
     }
   }
