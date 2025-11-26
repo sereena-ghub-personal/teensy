@@ -100,6 +100,37 @@ void loop() {
 
       default:
         break;
+
+      case 'g':  // test forward straightness
+        Serial.println("Testing FORWARD straightness for 2 seconds...");
+        
+        totalDegRight = 0.0;
+        totalDegLeft  = 0.0;
+        
+        calculateThetaRight();
+        calculateThetaLeft();
+        thetaRightP = thetaRight;
+        thetaLeftP  = thetaLeft;
+        
+        servoRight.attach(pinControlRight);
+        servoLeft.attach(pinControlLeft);
+        
+        unsigned long startTime = millis();
+        
+        while (millis() - startTime < 2000) {
+          servoRight.write(SPEED_FORWARD_RIGHT);
+          servoLeft.write(SPEED_FORWARD_LEFT);
+          updateEncodersAndAccumulate();
+        }
+        
+        stopRobot();
+        
+        Serial.println("\nForward Straightness Test:");
+        Serial.print("  Right: "); Serial.print(totalDegRight, 0); Serial.println("°");
+        Serial.print("  Left: ");  Serial.print(totalDegLeft, 0);  Serial.println("°");
+        Serial.print("  Difference: "); Serial.print(abs(totalDegRight - totalDegLeft), 0); Serial.println("°");
+        Serial.println("Goal: Difference should be < 50° for straight motion");
+        break;
     }
   }
 }
