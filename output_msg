@@ -8,15 +8,123 @@ Driving BACKWARD...
 BACKWARD complete
 Sequence finished.
 
+// *** CALIBRATION SECTION ***
+// Forward speeds (your existing values)
+const int SPEED_FORWARD_RIGHT = 89;
+const int SPEED_FORWARD_LEFT  = 98;
 
-Fwd | R: 2397° L: 316°
-Fwd | R: 2484° L: 426°
-Forward complete - R: 3537° L: 515°
+// Backward speeds - ADJUST THESE VALUES during calibration
+// Start with these and fine-tune based on actual distance traveled
+const int SPEED_BACKWARD_RIGHT = 99;  // Try 98, 99, 100, 101
+const int SPEED_BACKWARD_LEFT  = 90;  // Try 88, 89, 90, 91
+
+// OUTPUT
+
+Starting forward-backward cycle...
+Fwd | R: 0° L: 0°
+Fwd | R: 2857° L: 2460°
+Forward complete - R: 3571° L: 2888°
 Back | R: 0° L: 0°
-Back | R: 933° L: 17°
-Back | R: 1756° L: 36°
-Back | R: 1850° L: 57°
-Back | R: 1945° L: 78°
-Back | R: 2325° L: 102°
-Backward complete - R: 3578° L: 120°
+Back | R: 2036° L: 879°
+Back | R: 3078° L: 904°
+Back | R: 3157° L: 928°
+Back | R: 3242° L: 952°
+Backward complete - R: 3521° L: 971°
 Cycle complete!
+
+-----------------------------------------------------------------------------------------------------
+
+// *** CALIBRATION SECTION ***
+// Forward speeds (your existing values)
+const int SPEED_FORWARD_RIGHT = 89;
+const int SPEED_FORWARD_LEFT  = 98;
+
+// Backward speeds - ADJUST THESE VALUES during calibration
+// Start with these and fine-tune based on actual distance traveled
+const int SPEED_BACKWARD_RIGHT = 99;  // Try 98, 99, 100, 101
+const int SPEED_BACKWARD_LEFT  = 90;  // Try 88, 89, 90, 91
+
+// OUTPUT
+
+Fwd | R: 2267° L: 3274°
+Fwd | R: 2341° L: 3373°
+Fwd | R: 2403° L: 3463°
+Forward complete - R: 2415° L: 3479°
+Back | R: 0° L: 0°
+Back | R: 58° L: 60°
+Back | R: 125° L: 130°
+Back | R: 1377° L: 2354°
+Backward complete - R: 2599° L: 3481°
+Cycle complete!
+
+---------------------------------------------------------------------------------------------------------
+
+// *** CALIBRATION SECTION ***
+// Forward speeds (your existing values)
+const int SPEED_FORWARD_RIGHT = 89;
+const int SPEED_FORWARD_LEFT  = 98;
+
+// Backward speeds - ADJUST THESE VALUES during calibration
+// Start with these and fine-tune based on actual distance traveled
+const int SPEED_BACKWARD_RIGHT = 99;  // Try 98, 99, 100, 101
+const int SPEED_BACKWARD_LEFT  = 89;  // Try 88, 89, 90, 91
+
+// OUTPUT
+
+Fwd | R: 1918° L: 1539°
+Forward complete - R: 3494° L: 2529°
+Back | R: 0° L: 0°
+Back | R: 1649° L: 1488°
+Back | R: 1724° L: 1960°
+Back | R: 2144° L: 2014°
+Back | R: 2208° L: 2054°
+Back | R: 2780° L: 2415°
+Backward complete - R: 3595° L: 2982°
+Cycle complete!
+
+---------------------------------------------------------------------------------------------------------
+
+// *** CALIBRATION SECTION ***
+// Forward speeds (your existing values)
+const int SPEED_FORWARD_RIGHT = 89;
+const int SPEED_FORWARD_LEFT  = 98;
+
+// Backward speeds - ADJUST THESE VALUES during calibration
+// Start with these and fine-tune based on actual distance traveled
+const int SPEED_BACKWARD_RIGHT = 100;  // Try 98, 99, 100, 101
+const int SPEED_BACKWARD_LEFT  = 90;  // Try 88, 89, 90, 91
+
+// OUTPUT
+
+Starting forward-backward cycle...
+Fwd | R: 0° L: 127°
+Fwd | R: 2001° L: 1543°
+Forward complete - R: 3523° L: 2116°
+Back | R: 0° L: 0°
+Back | R: 2928° L: 2412°
+Backward complete - R: 3497° L: 2707°
+Cycle complete!
+
+-----------------------------------------------------------------------------------------------------
+
+// *** CALIBRATION SECTION ***
+// Forward speeds (your existing values)
+const int SPEED_FORWARD_RIGHT = 89;
+const int SPEED_FORWARD_LEFT  = 98;
+
+// Backward speeds - ADJUST THESE VALUES during calibration
+// Start with these and fine-tune based on actual distance traveled
+const int SPEED_BACKWARD_RIGHT = 101;  // Try 98, 99, 100, 101
+const int SPEED_BACKWARD_LEFT  = 91;  // Try 88, 89, 90, 91
+
+// OUTPUT
+
+Starting forward-backward cycle...
+Fwd | R: 0° L: 0°
+Fwd | R: 1157° L: 1287°
+Forward complete - R: 2893° L: 3528°
+Back | R: 0° L: 0°
+Backward complete - R: 3564° L: 2517°
+Cycle complete!
+
+-------------------------------------------------------------------------------------------------------
