@@ -52,3 +52,82 @@ BACK | t = 7.67 s  | R: 7.941 turns, L: 5.687 turns  | avg dist ≈ 1.413 m  | e
 Final turns  R: 8.255  L: 5.987  | avg distance ≈ 1.477 m
 
 >>> Cycle complete!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+new output
+=======================
+
+
+>>> Starting forward-backward cycle...
+
+--- FORWARD 2m START ---
+FWD | t = 0.01 s  | R: 0.000 turns, L: 0.000 turns  | avg dist ≈ 0.000 m  | error(turns) = 0.0002  | PWM R/L = 89/98
+FWD | t = 0.41 s  | R: 0.134 turns, L: 0.187 turns  | avg dist ≈ 0.033 m  | error(turns) = 0.0526  | PWM R/L = 88/98
+FWD | t = 0.81 s  | R: 0.359 turns, L: 0.417 turns  | avg dist ≈ 0.080 m  | error(turns) = 0.0581  | PWM R/L = 88/98
+FWD | t = 1.22 s  | R: 0.594 turns, L: 0.656 turns  | avg dist ≈ 0.130 m  | error(turns) = 0.0625  | PWM R/L = 88/97
+FWD | t = 1.62 s  | R: 0.827 turns, L: 0.889 turns  | avg dist ≈ 0.178 m  | error(turns) = 0.0619  | PWM R/L = 88/98
+FWD | t = 2.03 s  | R: 1.068 turns, L: 1.130 turns  | avg dist ≈ 0.228 m  | error(turns) = 0.0616  | PWM R/L = 88/98
+FWD | t = 2.43 s  | R: 1.306 turns, L: 2.304 turns  | avg dist ≈ 0.374 m  | error(turns) = 0.9979  | PWM R/L = 87/90
+FWD | t = 2.83 s  | R: 1.591 turns, L: 2.339 turns  | avg dist ≈ 0.407 m  | error(turns) = 0.7479  | PWM R/L = 87/92
+FWD | t = 3.24 s  | R: 1.879 turns, L: 2.380 turns  | avg dist ≈ 0.441 m  | error(turns) = 0.5010  | PWM R/L = 87/94
+FWD | t = 3.64 s  | R: 2.175 turns, L: 2.448 turns  | avg dist ≈ 0.479 m  | error(turns) = 0.2731  | PWM R/L = 87/96
+FWD | t = 4.04 s  | R: 2.467 turns, L: 2.604 turns  | avg dist ≈ 0.526 m  | error(turns) = 0.1367  | PWM R/L = 88/97
+FWD | t = 4.45 s  | R: 2.699 turns, L: 2.797 turns  | avg dist ≈ 0.570 m  | error(turns) = 0.0980  | PWM R/L = 88/97
+FWD | t = 4.85 s  | R: 2.939 turns, L: 2.996 turns  | avg dist ≈ 0.615 m  | error(turns) = 0.0568  | PWM R/L = 88/98
+FWD | t = 5.25 s  | R: 3.170 turns, L: 3.230 turns  | avg dist ≈ 0.664 m  | error(turns) = 0.0606  | PWM R/L = 88/98
+FWD | t = 5.65 s  | R: 3.399 turns, L: 3.467 turns  | avg dist ≈ 0.712 m  | error(turns) = 0.0671  | PWM R/L = 88/97
+FWD | t = 6.06 s  | R: 3.632 turns, L: 3.691 turns  | avg dist ≈ 0.759 m  | error(turns) = 0.0595  | PWM R/L = 88/98
+FWD | t = 6.46 s  | R: 3.862 turns, L: 3.923 turns  | avg dist ≈ 0.807 m  | error(turns) = 0.0614  | PWM R/L = 88/98
+FWD | t = 6.87 s  | R: 4.104 turns, L: 4.166 turns  | avg dist ≈ 0.857 m  | error(turns) = 0.0620  | PWM R/L = 88/98
+FWD | t = 7.27 s  | R: 4.335 turns, L: 4.408 turns  | avg dist ≈ 0.906 m  | error(turns) = 0.0732  | PWM R/L = 88/97
+FWD | t = 7.67 s  | R: 4.564 turns, L: 4.625 turns  | avg dist ≈ 0.953 m  | error(turns) = 0.0615  | PWM R/L = 88/98
+!! Timeout in moveForward2m, stopping.
+-- FORWARD 2m END ---
+Final turns  R: 4.751  L: 4.811  | avg distance ≈ 0.991 m
+
+>>> Waiting 3 seconds before moving backward...
+
+--- BACKWARD 2m START ---
+BACK | t = 0.01 s  | R: 0.000 turns, L: 0.000 turns  | avg dist ≈ 0.000 m  | error(turns) = 0.0003  | PWM R/L = 99/90
+BACK | t = 0.41 s  | R: 0.141 turns, L: 0.039 turns  | avg dist ≈ 0.019 m  | error(turns) = -0.1012  | PWM R/L = 98/89
+BACK | t = 0.81 s  | R: 0.299 turns, L: 0.139 turns  | avg dist ≈ 0.045 m  | error(turns) = -0.1603  | PWM R/L = 97/89
+BACK | t = 1.22 s  | R: 0.409 turns, L: 0.237 turns  | avg dist ≈ 0.067 m  | error(turns) = -0.1719  | PWM R/L = 97/89
+BACK | t = 1.62 s  | R: 0.520 turns, L: 0.335 turns  | avg dist ≈ 0.089 m  | error(turns) = -0.1845  | PWM R/L = 97/89
+BACK | t = 2.02 s  | R: 0.628 turns, L: 0.443 turns  | avg dist ≈ 0.111 m  | error(turns) = -0.1852  | PWM R/L = 97/89
+BACK | t = 2.43 s  | R: 0.734 turns, L: 0.561 turns  | avg dist ≈ 0.134 m  | error(turns) = -0.1736  | PWM R/L = 97/89
+BACK | t = 2.83 s  | R: 0.843 turns, L: 0.666 turns  | avg dist ≈ 0.156 m  | error(turns) = -0.1763  | PWM R/L = 97/89
+BACK | t = 3.23 s  | R: 0.964 turns, L: 0.782 turns  | avg dist ≈ 0.181 m  | error(turns) = -0.1820  | PWM R/L = 97/89
+BACK | t = 3.64 s  | R: 1.072 turns, L: 0.889 turns  | avg dist ≈ 0.203 m  | error(turns) = -0.1829  | PWM R/L = 97/89
+BACK | t = 4.04 s  | R: 1.180 turns, L: 0.998 turns  | avg dist ≈ 0.226 m  | error(turns) = -0.1821  | PWM R/L = 97/89
+BACK | t = 4.45 s  | R: 1.290 turns, L: 1.104 turns  | avg dist ≈ 0.248 m  | error(turns) = -0.1860  | PWM R/L = 97/89
+BACK | t = 4.85 s  | R: 1.400 turns, L: 1.212 turns  | avg dist ≈ 0.271 m  | error(turns) = -0.1877  | PWM R/L = 97/88
+BACK | t = 5.26 s  | R: 1.510 turns, L: 1.324 turns  | avg dist ≈ 0.294 m  | error(turns) = -0.1852  | PWM R/L = 97/89
+BACK | t = 5.66 s  | R: 1.619 turns, L: 1.432 turns  | avg dist ≈ 0.316 m  | error(turns) = -0.1875  | PWM R/L = 97/88
+BACK | t = 6.07 s  | R: 1.727 turns, L: 1.553 turns  | avg dist ≈ 0.340 m  | error(turns) = -0.1736  | PWM R/L = 97/89
+BACK | t = 6.47 s  | R: 1.835 turns, L: 1.661 turns  | avg dist ≈ 0.362 m  | error(turns) = -0.1736  | PWM R/L = 97/89
+BACK | t = 6.88 s  | R: 1.957 turns, L: 1.771 turns  | avg dist ≈ 0.386 m  | error(turns) = -0.1859  | PWM R/L = 97/89
+BACK | t = 7.28 s  | R: 2.065 turns, L: 1.877 turns  | avg dist ≈ 0.409 m  | error(turns) = -0.1881  | PWM R/L = 97/88
+BACK | t = 7.69 s  | R: 2.174 turns, L: 1.990 turns  | avg dist ≈ 0.432 m  | error(turns) = -0.1838  | PWM R/L = 97/89
+!! Timeout in moveBackward2m, stopping.
+
+--- BACKWARD 2m END ---
+Final turns  R: 2.258  L: 2.075  | avg distance ≈ 0.449 m
+
+>>> Cycle complete!
