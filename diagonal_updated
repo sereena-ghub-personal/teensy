@@ -41,11 +41,11 @@ const int PWM_NEUTRAL_LEFT  = 94;
 // Mapping S -> PWM: 
 //   right  : PWM_NEUTRAL_RIGHT - K_RIGHT_PWM_FWD * S_right
 //   left   : PWM_NEUTRAL_LEFT  + K_LEFT_PWM_FWD  * S_left
-const double K_RIGHT_PWM_FWD = 4.4;
-const double K_LEFT_PWM_FWD  = 4.3;
+const double K_RIGHT_PWM_FWD = 4.45; //was 4.4 almost perfect
+const double K_LEFT_PWM_FWD  = 4.30; //was 4.3 almost perfect
 
 // P-gain for distance difference between wheels when going straight
-const double Kp_turns_FWD    = 1.2;  // tune 0.5–1.5 range
+const double Kp_turns_FWD    = 1.25;  // tune 0.5–1.5 range (was 1.2 for almost right value, have changed it to 1.25)
 
 // --- Backward gains (used for turning one wheel backward) ---
 const double K_RIGHT_PWM_BACK = 4.3;
@@ -612,7 +612,7 @@ void runDiagonal40cm() {
 
   // Length of diagonal in a square: side * sqrt(2)
   const double diagonal_m = squareSide_m * 1.41421356237;
-  const double turn45Turns = TURN_90_TURNS * 0.5;  // 45° left = 45° right (same magnitude)
+  const double turn45Turns = TURN_90_TURNS * 1.5;  // 45° left = 45° right (same magnitude)
 
   // Step 1: Move 40cm straight forward from starting position
   Serial.println("\n=== DIAGONAL: Step 1 - Move 40cm straight ===");
