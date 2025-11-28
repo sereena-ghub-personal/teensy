@@ -1,0 +1,354 @@
+#include <Servo.h>
+#include <math.h>   
+
+Servo servoRight;
+Servo servoLeft;
+
+constexpr int pinFeedbackLeft  = 7;
+constexpr int pinFeedbackRight = 8;
+constexpr int pinControlLeft   = 5;
+constexpr int pinControlRight  = 6;
+
+char keyCommand;
+
+unsigned long highRight = 0, highLeft = 0;
+unsigned long lowRight  = 0, lowLeft  = 0;
+unsigned long cycleTimeRight = 0, cycleTimeLeft = 0;
+double dutyCycleRight = 0.0, dutyCycleLeft = 0.0;
+
+double thetaRight  = 0.0, thetaLeft  = 0.0;
+double thetaRightP = 0.0, thetaLeftP = 0.0;
+
+double totalTurnsRight = 0.0;
+double totalTurnsLeft  = 0.0;
+
+const double wheelDiameter   = 0.07;                   
+const double wheelCirc       = 3.14159 * wheelDiameter;    
+const double targetDistance  = 2.0;                         
+const double targetRotations = targetDistance / wheelCirc;  
+
+
+const int    PWM_NEUTRAL  = 94;  
+const double K_RIGHT_PWM  = 4.7;  
+const double K_LEFT_PWM   = 4.3; 
+
+const double S_BASE_FWD   = 1.1;
+const double S_BASE_BACK  = 1.1;  
+
+const double Kp_turns     = 0.2;  
+
+void calculateThetaRight();
+void calculateThetaLeft();
+void stopRobot();
+void updateEncodersAndAccumulate();
+void moveForward2m();
+void moveBackward2m();
+double getAverageDistance();
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(pinFeedbackRight, INPUT);
+  pinMode(pinFeedbackLeft,  INPUT);
+
+  Serial.println("===== ROBOT READY =====");
+  Serial.print("Wheel diameter: ");
+  Serial.print(wheelDiameter * 100.0, 1);
+  Serial.println(" cm");
+
+  Serial.print("Wheel circumference: ");
+  Serial.print(wheelCirc, 4);
+  Serial.println(" m");
+
+  Serial.print("Target rotations for 2m: ");
+  Serial.println(targetRotations, 3);
+
+  Serial.println("\nCommands:");
+  Serial.println("  'f' - Move forward 2m, wait 3s, then backward 2m");
+  Serial.println("  'F' - Test FORWARD 2m only");
+  Serial.println("  'B' - Test BACKWARD 2m only");
+  Serial.println("  's' - Emergency stop");
+  Serial.println("  't' - Test LEFT motor only (3s)");
+  Serial.println("=======================\n");
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    keyCommand = Serial.read();
+
+    switch (keyCommand) {
+
+      case 'f':
+        Serial.println("\n>>> Starting forward-backward cycle...");
+        moveForward2m();
+        Serial.println(">>> Waiting 3 seconds before moving backward...");
+        delay(3000);
+        moveBackward2m();
+        Serial.println(">>> Cycle complete!\n");
+        break;
+
+      case 'F':
+        Serial.println("\n>>> Testing FORWARD 2m only...");
+        moveForward2m();
+        Serial.println(">>> Forward test complete!\n");
+        break;
+
+      case 'B':
+        Serial.println("\n>>> Testing BACKWARD 2m only...");
+        moveBackward2m();
+        Serial.println(">>> Backward test complete!\n");
+        break;
+
+      case 's':
+        Serial.println("\n>>> Emergency stop!");
+        stopRobot();
+        break;
+
+      default:
+        break;
+    }
+  }
+}
+
+void stopRobot() {
+  servoRight.attach(pinControlRight);
+  servoLeft.attach(pinControlLeft);
+
+  servoRight.write(PWM_NEUTRAL);
+  servoLeft.write(PWM_NEUTRAL);
+
+  delay(100);   
+
+  servoRight.detach();
+  servoLeft.detach();
+}
+
+void updateEncodersAndAccumulate() {
+  thetaRightP = thetaRight;
+  thetaLeftP  = thetaLeft;
+
+  calculateThetaRight();
+  calculateThetaLeft();
+
+  double dR = thetaRight - thetaRightP;
+  double dL = thetaLeft  - thetaLeftP;
+
+  if (dR > 180.0)  dR -= 360.0;
+  if (dR < -180.0) dR += 360.0;
+
+  if (dL > 180.0)  dL -= 360.0;
+  if (dL < -180.0) dL += 360.0;
+
+  totalTurnsRight += fabs(dR) / 360.0;
+  totalTurnsLeft  += fabs(dL) / 360.0;
+}
+
+double getAverageDistance() {
+  double avgTurns = 0.5 * (totalTurnsRight + totalTurnsLeft);
+  return avgTurns * wheelCirc;  
+}
+
+void moveForward2m() {
+  Serial.println("\n--- FORWARD 2m START ---");
+
+  totalTurnsRight = 0.0;
+  totalTurnsLeft  = 0.0;
+
+  calculateThetaRight();
+  calculateThetaLeft();
+  thetaRightP = thetaRight;
+  thetaLeftP  = thetaLeft;
+
+  servoRight.attach(pinControlRight);
+  servoLeft.attach(pinControlLeft);
+
+  unsigned long startTime = millis();
+
+  while (totalTurnsRight < targetRotations &&
+         totalTurnsLeft  < targetRotations) {
+
+    if (millis() - startTime > 20000) {   
+      Serial.println("!! Timeout in moveForward2m, stopping.");
+      break;
+    }
+
+    if (Serial.available() > 0) {
+      char c = Serial.read();
+      if (c == 's') {
+        Serial.println("!! Stop command (s) received in moveForward2m.");
+        stopRobot();
+        return;
+      }
+    }
+
+    updateEncodersAndAccumulate();
+
+    double errorTurns = totalTurnsLeft - totalTurnsRight;
+    double correction = Kp_turns * errorTurns;
+
+    double S_right = S_BASE_FWD + correction;
+    double S_left  = S_BASE_FWD - correction;
+
+    S_right = constrain(S_right, -1.5, 1.5);
+    S_left  = constrain(S_left,  -1.5, 1.5);
+
+    int pwmRight = (int)round(PWM_NEUTRAL - K_RIGHT_PWM * S_right);
+    int pwmLeft  = (int)round(PWM_NEUTRAL + K_LEFT_PWM  * S_left);
+
+    pwmRight = constrain(pwmRight, 60, 130);
+    pwmLeft  = constrain(pwmLeft,  60, 130);
+
+    servoRight.write(pwmRight);
+    servoLeft.write(pwmLeft);
+
+    static unsigned long lastPrint = 0;
+    if (millis() - lastPrint > 400) {
+      double dist = getAverageDistance();
+      Serial.print("FWD | t = ");
+      Serial.print((millis() - startTime) / 1000.0, 2);
+      Serial.print(" s  | R: ");
+      Serial.print(totalTurnsRight, 3);
+      Serial.print(" turns, L: ");
+      Serial.print(totalTurnsLeft, 3);
+      Serial.print(" turns  | avg dist ≈ ");
+      Serial.print(dist, 3);
+      Serial.print(" m  | error(turns) = ");
+      Serial.print(errorTurns, 4);
+      Serial.print("  | PWM R/L = ");
+      Serial.print(pwmRight);
+      Serial.print("/");
+      Serial.println(pwmLeft);
+      lastPrint = millis();
+    }
+  }
+
+  double finalDist = getAverageDistance();
+  Serial.println("\n--- FORWARD 2m END ---");
+  Serial.print("Final turns  R: ");
+  Serial.print(totalTurnsRight, 3);
+  Serial.print("  L: ");
+  Serial.print(totalTurnsLeft, 3);
+  Serial.print("  | avg distance ≈ ");
+  Serial.print(finalDist, 3);
+  Serial.println(" m\n");
+
+  stopRobot();
+}
+
+void moveBackward2m() {
+  Serial.println("\n--- BACKWARD 2m START ---");
+
+  totalTurnsRight = 0.0;
+  totalTurnsLeft  = 0.0;
+
+  calculateThetaRight();
+  calculateThetaLeft();
+  thetaRightP = thetaRight;
+  thetaLeftP  = thetaLeft;
+
+  servoRight.attach(pinControlRight);
+  servoLeft.attach(pinControlLeft);
+
+  unsigned long startTime = millis();
+
+  while (totalTurnsRight < targetRotations &&
+         totalTurnsLeft  < targetRotations) {
+
+    if (millis() - startTime > 40000) {
+      Serial.println("!! Timeout in moveBackward2m, stopping.");
+      break;
+    }
+
+    if (Serial.available() > 0) {
+      char c = Serial.read();
+      if (c == 's') {
+        Serial.println("!! Stop command (s) received in moveBackward2m.");
+        stopRobot();
+        return;
+      }
+    }
+
+    updateEncodersAndAccumulate();
+
+    double errorTurns = totalTurnsLeft - totalTurnsRight;
+    const double Kp_turns_local = 0.25;
+    double correction = Kp_turns_local * errorTurns;
+
+
+    double S_right = S_BASE_BACK + correction;
+    double S_left  = S_BASE_BACK - correction;
+
+    S_right = constrain(S_right, 0.4, 1.5);
+    S_left  = constrain(S_left,  0.4, 1.5);
+
+    int pwmRight = (int)round(PWM_NEUTRAL + K_RIGHT_PWM * S_right);
+    int pwmLeft  = (int)round(PWM_NEUTRAL - K_LEFT_PWM  * S_left);
+
+    pwmRight = constrain(pwmRight, 60, 130);
+    pwmLeft  = constrain(pwmLeft,  60, 130);
+
+    servoRight.write(pwmRight);
+    servoLeft.write(pwmLeft);
+
+    static unsigned long lastPrint = 0;
+    if (millis() - lastPrint > 400) {
+      double dist = getAverageDistance();
+      Serial.print("BACK | t = ");
+      Serial.print((millis() - startTime) / 1000.0, 2);
+      Serial.print(" s  | R: ");
+      Serial.print(totalTurnsRight, 3);
+      Serial.print(" turns, L: ");
+      Serial.print(totalTurnsLeft, 3);
+      Serial.print(" turns  | avg dist ≈ ");
+      Serial.print(dist, 3);
+      Serial.print(" m  | error(turns) = ");
+      Serial.print(errorTurns, 4);
+      Serial.print("  | PWM R/L = ");
+      Serial.print(pwmRight);
+      Serial.print("/");
+      Serial.println(pwmLeft);
+      lastPrint = millis();
+    }
+  }
+
+  double finalDist = getAverageDistance();
+  Serial.println("\n--- BACKWARD 2m END ---");
+  Serial.print("Final turns  R: ");
+  Serial.print(totalTurnsRight, 3);
+  Serial.print("  L: ");
+  Serial.print(totalTurnsLeft, 3);
+  Serial.print("  | avg distance ≈ ");
+  Serial.print(finalDist, 3);
+  Serial.println(" m\n");
+
+  stopRobot();
+}
+
+void calculateThetaRight() {
+  highRight = pulseIn(pinFeedbackRight, HIGH);
+  lowRight  = pulseIn(pinFeedbackRight, LOW);
+  cycleTimeRight = highRight + lowRight;
+
+  if (cycleTimeRight == 0) {
+    return;
+  }
+
+  dutyCycleRight = (double)(highRight * 100.0) / (double)cycleTimeRight;
+
+  thetaRight = (360.0 - 1.0)
+               - ((dutyCycleRight - 2.9) * 360.0) / (97.1 - 2.9 + 1.0);
+}
+
+void calculateThetaLeft() {
+  highLeft = pulseIn(pinFeedbackLeft, HIGH);
+  lowLeft  = pulseIn(pinFeedbackLeft, LOW);
+  cycleTimeLeft = highLeft + lowLeft;
+
+  if (cycleTimeLeft == 0) {
+    return;
+  }
+
+  dutyCycleLeft = (double)(highLeft * 100.0) / (double)cycleTimeLeft;
+
+  thetaLeft = (360.0 - 1.0)
+              - ((dutyCycleLeft - 2.9) * 360.0) / (97.1 - 2.9 + 1.0);
+}
