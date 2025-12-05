@@ -3,8 +3,8 @@
 
 Servo servoRight;
 Servo servoLeft;
-constexpr int pinFeedbackLeft  = 9;
-constexpr int pinFeedbackRight = 10;
+constexpr int pinFeedbackLeft  = 7;
+constexpr int pinFeedbackRight = 8;
 constexpr int pinControlLeft   = 5;
 constexpr int pinControlRight  = 6;
 
